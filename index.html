@@ -236,7 +236,7 @@ footer.appfoot{text-align:center;color:var(--muted);font-size:12px;padding:30px 
     <span id="logoBox"></span>
     <div class="titles">
       <b id="coNameTop">شركة أسس التوريد للتجارة</b>
-      <span></span>
+      <span>دفتر الحسابات الخاص</span>
     </div>
   </div>
   <nav id="tabs">
@@ -244,6 +244,7 @@ footer.appfoot{text-align:center;color:var(--muted);font-size:12px;padding:30px 
     <button data-r="#/customers">العملاء</button>
     <button data-r="#/suppliers">الموردين</button>
     <button data-r="#/transactions">سجل الحركات</button>
+    <button data-r="#/cash">الخزنة</button>
     <button data-r="#/settings">الإعدادات والنسخ الاحتياطي</button>
   </nav>
 </div>
@@ -278,7 +279,7 @@ footer.appfoot{text-align:center;color:var(--muted);font-size:12px;padding:30px 
 const DEFAULT_SETTINGS = {
   companyName: "شركة أسس التوريد للتجارة",
   // ألصق رابط شعار الشركة هنا بين علامتي التنصيص (يُفضّل رابط صورة مباشر PNG/JPG شفاف الخلفية)
-  logoUrl: "https://cdn.phototourl.com/free/2026-08-22-54395b68-1983-46d7-86b0-24019cdb9866.png",
+  logoUrl: "",
   phone: "",
   address: "",
   currency: "ر.س",
@@ -286,7 +287,7 @@ const DEFAULT_SETTINGS = {
 };
 
 /* ---------- 2) طبقة التخزين (Store) ---------- */
-const LS_KEYS = { parties:"asas_parties", txs:"asas_transactions", settings:"asas_settings" };
+const LS_KEYS = { parties:"asas_parties", txs:"asas_transactions", settings:"asas_settings", cash:"asas_cash" };
 
 const Store = {
   getParties(){ return JSON.parse(localStorage.getItem(LS_KEYS.parties) || "[]"); },
@@ -294,6 +295,12 @@ const Store = {
 
   getTxs(){ return JSON.parse(localStorage.getItem(LS_KEYS.txs) || "[]"); },
   saveTxs(list){ localStorage.setItem(LS_KEYS.txs, JSON.stringify(list)); },
+
+  /* خزنة الكاش: حركات إيداع وسحب منفصلة تماماً عن العملاء والموردين */
+  getCash(){ return JSON.parse(localStorage.getItem(LS_KEYS.cash) || "[]"); },
+  saveCash(list){ localStorage.setItem(LS_KEYS.cash, JSON.stringify(list)); },
+  addCash(c){ const list=this.getCash(); list.push(c); this.saveCash(list); },
+  deleteCash(id){ this.saveCash(this.getCash().filter(c=>c.id!==id)); },
 
   getSettings(){
     const s = JSON.parse(localStorage.getItem(LS_KEYS.settings) || "null");
@@ -347,6 +354,14 @@ function balanceInfo(type, balance){
   }
 }
 
+/* حساب رصيد الخزنة الحالي (إيداعات - سحوبات) */
+function calcCashBalance(list){
+  list = list || Store.getCash();
+  let inSum=0, outSum=0;
+  list.forEach(c=>{ if(c.type==='in') inSum+=Number(c.amount); else outSum+=Number(c.amount); });
+  return { inSum, outSum, balance: inSum-outSum };
+}
+
 /* ---------- 4) التوجيه (Router) بسيط عبر الـ hash ---------- */
 window.addEventListener('hashchange', route);
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -372,6 +387,7 @@ function route(){
   if(path==='suppliers') return renderPartyList(app,'supplier');
   if(path==='party') return renderPartyDetail(app, param);
   if(path==='transactions') return renderAllTransactions(app);
+  if(path==='cash') return renderCashSafe(app);
   if(path==='settings') return renderSettings(app);
   app.innerHTML = "<p>الصفحة غير موجودة</p>";
 }
@@ -405,16 +421,18 @@ function renderHome(app){
   suppliers.forEach(s=>{ const b=calcPartyStats(s.id,txs.filter(t=>t.partyId===s.id)).balance; if(b>0) dueToSuppliers+=b; });
 
   const settings = Store.getSettings();
+  const cashBal = calcCashBalance();
   const recent = [...txs].sort((a,b)=> b.createdAt.localeCompare(a.createdAt)).slice(0,6);
 
   app.innerHTML = `
     <div class="ledger-hero">
       <span class="tag">دفتر الحسابات</span>
       <h1>${esc(settings.companyName)}</h1>
-      <p> حسابات العملاء والموردين، محفوظة على جهازك فقط.</p>
+      <p>نظرة سريعة وشاملة على حسابات العملاء والموردين، بالريال وبالتاريخ والوقت، محفوظة على جهازك فقط.</p>
       <div class="quick">
         <a href="#/customers">👥 حسابات العملاء</a>
         <a href="#/suppliers">🚚 حسابات الموردين</a>
+        <a href="#/cash">🗄 خزنة الكاش</a>
         <a href="#/transactions">🧾 سجل كل الحركات</a>
       </div>
     </div>
@@ -422,8 +440,13 @@ function renderHome(app){
     <div class="grid grid-4" style="margin-bottom:22px;">
       <div class="stat"><div class="lbl">عدد العملاء</div><div class="val num">${customers.length}</div></div>
       <div class="stat"><div class="lbl">عدد الموردين</div><div class="val num">${suppliers.length}</div></div>
-      <div class="stat gold"><div class="lbl">إجمالي مستحق العملاء</div><div class="val num balance-pos">${money(dueFromCustomers)} ${settings.currency}</div></div>
+      <div class="stat gold"><div class="lbl">إجمالي مستحق من العملاء</div><div class="val num balance-pos">${money(dueFromCustomers)} ${settings.currency}</div></div>
       <div class="stat gold"><div class="lbl">إجمالي مستحق للموردين (عليك)</div><div class="val num balance-pos">${money(dueToSuppliers)} ${settings.currency}</div></div>
+    </div>
+
+    <div class="stat gold" style="margin-bottom:22px;">
+      <div class="lbl">رصيد الخزنة الحالي</div>
+      <div class="val num" style="color:${cashBal.balance>=0?'var(--green)':'var(--red)'}">${money(Math.abs(cashBal.balance))} ${settings.currency}</div>
     </div>
 
     <div class="card pad">
@@ -584,8 +607,8 @@ function renderPartyDetail(app, id){
 
     <div class="card pad" style="margin-bottom:20px;">
       <div class="row" style="gap:10px;">
-        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة شراء</button>
-        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ تسجيل دفعة سداد</button>
+        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة</button>
+        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ دفعة سداد</button>
         <div class="spacer"></div>
         <input type="date" id="filterFrom" value="${currentPartyFilter.from}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
         <span style="color:var(--muted);font-size:13px;">إلى</span>
@@ -817,7 +840,151 @@ function renderAllTransactions(app){
 }
 
 /* ================================================================
-   10) الإعدادات + النسخ الاحتياطي والاستعادة
+   10) خزنة الكاش — إضافة وحذف يدوي منفصل تماماً عن العملاء والموردين
+   ================================================================ */
+let cashFilter = { from:'', to:'' };
+
+function renderCashSafe(app){
+  const settings = Store.getSettings();
+  let list = Store.getCash().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time) || a.createdAt.localeCompare(b.createdAt));
+
+  let filtered = list;
+  if(cashFilter.from) filtered = filtered.filter(c=>c.date>=cashFilter.from);
+  if(cashFilter.to) filtered = filtered.filter(c=>c.date<=cashFilter.to);
+
+  const totals = calcCashBalance(list);
+  const bal = totals.balance;
+
+  // رصيد تراكمي بعد كل حركة (على كامل السجل)
+  let running=0; const runningMap={};
+  list.forEach(c=>{ running += (c.type==='in'?Number(c.amount):-Number(c.amount)); runningMap[c.id]=running; });
+
+  app.innerHTML = `
+    <div class="row between" style="margin-bottom:16px;">
+      <div><h1>خزنة الكاش</h1><p class="subtitle">صندوق نقدي منفصل تماماً عن حسابات العملاء والموردين — إضافة وسحب يدوي فقط</p></div>
+      <button class="btn outline" onclick="printCashStatement()">🖨 طباعة كشف الخزنة</button>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom:20px;">
+      <div class="stat"><div class="lbl">إجمالي الإيداعات</div><div class="val num" style="color:var(--green);">${money(totals.inSum)} ${settings.currency}</div></div>
+      <div class="stat"><div class="lbl">إجمالي السحوبات</div><div class="val num" style="color:var(--red);">${money(totals.outSum)} ${settings.currency}</div></div>
+      <div class="stat gold"><div class="lbl">رصيد الخزنة الحالي</div><div class="val num" style="color:${bal>=0?'var(--green)':'var(--red)'}">${money(Math.abs(bal))} ${settings.currency} ${bal<0?'(عجز)':''}</div></div>
+    </div>
+
+    <div class="card pad" style="margin-bottom:20px;">
+      <div class="row" style="gap:10px;">
+        <button class="btn gold" onclick="openCashForm('in')">+ إيداع في الخزنة</button>
+        <button class="btn" onclick="openCashForm('out')">− سحب من الخزنة</button>
+        <div class="spacer"></div>
+        <input type="date" id="cf_from" value="${cashFilter.from}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
+        <span style="color:var(--muted);font-size:13px;">إلى</span>
+        <input type="date" id="cf_to" value="${cashFilter.to}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
+        <button class="btn sm outline" onclick="cashFilter.from=document.getElementById('cf_from').value; cashFilter.to=document.getElementById('cf_to').value; route();">تصفية</button>
+        <button class="btn sm outline" onclick="cashFilter={from:'',to:''}; route();">إعادة تعيين</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad" style="padding-bottom:0;"><h2>حركات الخزنة</h2></div>
+      ${filtered.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد بعدها</th><th></th></tr></thead>
+        <tbody>
+          ${filtered.map(c=>`
+            <tr>
+              <td>${fmtDate(c.date)}</td>
+              <td class="num">${c.time||'—'}</td>
+              <td>${c.type==='in'?'<span class="badge green">إيداع</span>':'<span class="badge red">سحب</span>'}</td>
+              <td>${esc(c.note||'—')}</td>
+              <td class="num">${money(c.amount)} ${settings.currency}</td>
+              <td class="num">${money(runningMap[c.id])}</td>
+              <td><button class="btn sm danger" onclick="confirmDeleteCash('${c.id}')">حذف</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table></div>
+      ` : `<div class="empty"><b>لا توجد حركات في الخزنة بعد</b>استخدم زر "إيداع" أو "سحب" لتسجيل أول حركة</div>`}
+    </div>
+  `;
+}
+
+function openCashForm(type){
+  document.getElementById('modalTitle').textContent = type==='in' ? 'إيداع في الخزنة' : 'سحب من الخزنة';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="grid grid-2">
+      <div class="field"><label>التاريخ</label><input type="date" id="cf_date" value="${todayStr()}"></div>
+      <div class="field"><label>الوقت</label><input type="time" id="cf_time" value="${nowTimeStr()}"></div>
+    </div>
+    <div class="field"><label>المبلغ *</label><input type="number" step="0.01" id="cf_amount" placeholder="0.00"></div>
+    <div class="field"><label>البيان / السبب</label><input id="cf_note" placeholder="مثال: إيداع رأس مال، سحب مصاريف يومية..."></div>
+  `;
+  document.getElementById('modalFoot').innerHTML = `
+    <button class="btn outline" onclick="closeModal()">إلغاء</button>
+    <button class="btn gold" onclick="saveCashForm('${type}')">حفظ</button>
+  `;
+  openModal();
+}
+
+function saveCashForm(type){
+  const amount = Number(document.getElementById('cf_amount').value);
+  if(!amount || amount<=0){ alert('أدخل مبلغاً صحيحاً أكبر من صفر'); return; }
+  const date = document.getElementById('cf_date').value || todayStr();
+  const time = document.getElementById('cf_time').value || nowTimeStr();
+  const note = document.getElementById('cf_note').value.trim();
+
+  Store.addCash({ id:uid(), type, amount, date, time, note, createdAt:new Date().toISOString() });
+  closeModal();
+  route();
+}
+
+function confirmDeleteCash(id){
+  if(confirm('هل تريد حذف هذه الحركة من الخزنة نهائياً؟')){
+    Store.deleteCash(id);
+    route();
+  }
+}
+
+function printCashStatement(){
+  const settings = Store.getSettings();
+  let list = Store.getCash().sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+  if(cashFilter.from) list = list.filter(c=>c.date>=cashFilter.from);
+  if(cashFilter.to) list = list.filter(c=>c.date<=cashFilter.to);
+
+  let running=0;
+  const rows = list.map(c=>{
+    running += (c.type==='in'?Number(c.amount):-Number(c.amount));
+    return `<tr>
+      <td>${fmtDate(c.date)}</td><td>${c.time||''}</td>
+      <td>${c.type==='in'?'إيداع':'سحب'}</td>
+      <td>${esc(c.note||'—')}</td>
+      <td class="num">${money(c.amount)}</td>
+      <td class="num">${money(running)}</td>
+    </tr>`;
+  }).join('');
+
+  const totals = calcCashBalance(list);
+  const filterNote = (cashFilter.from||cashFilter.to) ? `من ${cashFilter.from?fmtDate(cashFilter.from):'البداية'} إلى ${cashFilter.to?fmtDate(cashFilter.to):'اليوم'}` : '';
+
+  document.getElementById('printArea').innerHTML = `
+    ${invHeadHTML(settings)}
+    <h2 style="margin:14px 0 4px;">كشف حساب الخزنة</h2>
+    <p style="color:#666;font-size:12.5px;margin:0 0 14px;">${filterNote} — تاريخ الطباعة: ${fmtDate(todayStr())}</p>
+    <table class="inv-table">
+      <thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد التراكمي</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:#999;">لا توجد حركات</td></tr>`}</tbody>
+    </table>
+    <div class="inv-total"><table>
+      <tr><td>إجمالي الإيداعات</td><td class="num">${money(totals.inSum)} ${settings.currency}</td></tr>
+      <tr><td>إجمالي السحوبات</td><td class="num">${money(totals.outSum)} ${settings.currency}</td></tr>
+      <tr><td>الرصيد النهائي</td><td class="num">${money(totals.balance)} ${settings.currency}</td></tr>
+    </table></div>
+    <div class="inv-foot">تم إنشاء هذا الكشف عبر دفتر الحسابات الخاص بـ ${esc(settings.companyName)}</div>
+  `;
+  window.print();
+}
+
+/* ================================================================
+   11) الإعدادات + النسخ الاحتياطي والاستعادة
    ================================================================ */
 function renderSettings(app){
   const s = Store.getSettings();
@@ -869,6 +1036,7 @@ function exportBackup(){
     exportedAt: new Date().toISOString(),
     parties: Store.getParties(),
     transactions: Store.getTxs(),
+    cash: Store.getCash(),
     settings: Store.getSettings()
   };
   const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
@@ -891,6 +1059,7 @@ function importBackup(evt){
       if(!confirm('سيتم استبدال جميع البيانات الحالية بمحتوى هذا الملف. هل تريد المتابعة؟')) return;
       Store.saveParties(data.parties);
       Store.saveTxs(data.transactions);
+      if(data.cash) Store.saveCash(data.cash);
       if(data.settings) Store.saveSettings({...DEFAULT_SETTINGS, ...data.settings});
       alert('تمت الاستعادة بنجاح');
       applyBranding();
@@ -906,6 +1075,7 @@ function wipeAllData(){
   if(confirm('سيتم حذف كل العملاء والموردين والحركات نهائياً من هذا الجهاز. متابعة؟')){
     localStorage.removeItem(LS_KEYS.parties);
     localStorage.removeItem(LS_KEYS.txs);
+    localStorage.removeItem(LS_KEYS.cash);
     location.hash = '#/home';
     route();
   }
