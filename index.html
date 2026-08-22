@@ -236,7 +236,7 @@ footer.appfoot{text-align:center;color:var(--muted);font-size:12px;padding:30px 
     <span id="logoBox"></span>
     <div class="titles">
       <b id="coNameTop">شركة أسس التوريد للتجارة</b>
-      <span>دفتر الحسابات الخاص</span>
+      <span></span>
     </div>
   </div>
   <nav id="tabs">
@@ -283,7 +283,8 @@ const DEFAULT_SETTINGS = {
   phone: "",
   address: "",
   currency: "ر.س",
-  invoiceCounter: 1
+  invoiceCounter: 1,
+  receiptCounter: 1
 };
 
 /* ---------- 2) طبقة التخزين (Store) ---------- */
@@ -316,7 +317,8 @@ const Store = {
   addTx(t){ const list=this.getTxs(); list.push(t); this.saveTxs(list); },
   deleteTx(id){ this.saveTxs(this.getTxs().filter(t=>t.id!==id)); },
 
-  nextInvoiceNo(){ const s=this.getSettings(); const n=s.invoiceCounter||1; s.invoiceCounter=n+1; this.saveSettings(s); return n; }
+  nextInvoiceNo(){ const s=this.getSettings(); const n=s.invoiceCounter||1; s.invoiceCounter=n+1; this.saveSettings(s); return n; },
+  nextReceiptNo(){ const s=this.getSettings(); const n=s.receiptCounter||1; s.receiptCounter=n+1; this.saveSettings(s); return n; }
 };
 
 /* ---------- 3) أدوات مساعدة ---------- */
@@ -461,7 +463,7 @@ function renderHome(app){
               <td>${fmtDate(t.date)}</td>
               <td class="num">${t.time||'—'}</td>
               <td>${p?esc(p.name):'—'} <span class="badge ${p&&p.type==='customer'?'gold':'green'}" style="margin-right:4px;">${p?partyLabel(p.type):''}</span></td>
-              <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
+              <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':`<span class="badge green">دفعة</span> <span class="badge gold">${esc(t.method||'نقدي')}</span>`}</td>
               <td>${esc(t.note||'—')}</td>
               <td class="num">${money(t.amount)}</td>
             </tr>`;
@@ -607,8 +609,8 @@ function renderPartyDetail(app, id){
 
     <div class="card pad" style="margin-bottom:20px;">
       <div class="row" style="gap:10px;">
-        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة</button>
-        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ دفعة سداد</button>
+        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة / بضاعة</button>
+        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ تسجيل دفعة / سداد</button>
         <div class="spacer"></div>
         <input type="date" id="filterFrom" value="${currentPartyFilter.from}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
         <span style="color:var(--muted);font-size:13px;">إلى</span>
@@ -622,18 +624,19 @@ function renderPartyDetail(app, id){
       <div class="pad" style="padding-bottom:0;"><h2>سجل حركات الحساب</h2></div>
       ${filtered.length ? `
       <div class="table-wrap"><table>
-        <thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد بعدها</th><th></th></tr></thead>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>طريقة الدفع</th><th>البيان</th><th>المبلغ</th><th>الرصيد بعدها</th><th></th></tr></thead>
         <tbody>
           ${filtered.map(t=>`
             <tr>
               <td>${fmtDate(t.date)}</td>
               <td class="num">${t.time||'—'}</td>
               <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
-              <td>${esc(t.note||(t.type==='invoice'?'فاتورة بضاعة':'دفعة نقدية'))}</td>
+              <td>${t.type==='payment' ? `<span class="badge gold">${esc(t.method||'نقدي')}</span>` : '—'}</td>
+              <td>${esc(t.note||(t.type==='invoice'?'فاتورة بضاعة':'—'))}</td>
               <td class="num">${money(t.amount)} ${settings.currency}</td>
               <td class="num">${money(runningMap[t.id])}</td>
               <td class="row" style="gap:6px;">
-                ${t.type==='invoice' ? `<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة الفاتورة</button>`:''}
+                ${t.type==='invoice' ? `<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة الفاتورة</button>` : `<button class="btn sm outline" onclick="printPayment('${t.id}')">طباعة السند</button>`}
                 <button class="btn sm danger" onclick="confirmDeleteTx('${t.id}','${p.id}')">حذف</button>
               </td>
             </tr>
@@ -747,7 +750,7 @@ function saveTxForm(partyId, type){
   const time = document.getElementById('tf_time').value || nowTimeStr();
   const note = (document.getElementById('tf_note')?.value || '').trim();
 
-  let amount, items=null, invoiceNo=null;
+  let amount, items=null, invoiceNo=null, receiptNo=null;
   if(type==='invoice'){
     const validItems = invoiceItemsTemp.filter(it=>it.name.trim() && (Number(it.qty)>0));
     amount = validItems.reduce((s,it)=>s+(Number(it.qty)*Number(it.price)),0);
@@ -757,11 +760,12 @@ function saveTxForm(partyId, type){
   }else{
     amount = Number(document.getElementById('tf_amount').value);
     if(!amount || amount<=0){ alert('أدخل مبلغاً صحيحاً أكبر من صفر'); return; }
+    receiptNo = Store.nextReceiptNo();
   }
 
   Store.addTx({
     id:uid(), partyId, type, amount, date, time, note,
-    items, invoiceNo,
+    items, invoiceNo, receiptNo,
     method: type==='payment' ? document.getElementById('tf_method').value : null,
     createdAt: new Date().toISOString()
   });
@@ -818,7 +822,7 @@ function renderAllTransactions(app){
     <div class="card">
       ${txs.length ? `
       <div class="table-wrap"><table>
-        <thead><tr><th>التاريخ</th><th>الوقت</th><th>الطرف</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th></th></tr></thead>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>الطرف</th><th>النوع</th><th>طريقة الدفع</th><th>البيان</th><th>المبلغ</th><th></th></tr></thead>
         <tbody>
           ${txs.map(t=>{
             const p = parties.find(x=>x.id===t.partyId);
@@ -827,9 +831,10 @@ function renderAllTransactions(app){
               <td class="num">${t.time||'—'}</td>
               <td>${p?`<a class="link" onclick="location.hash='#/party/${p.id}'">${esc(p.name)}</a>`:'محذوف'} ${p?`<span class="badge ${p.type==='customer'?'gold':'green'}">${partyLabel(p.type)}</span>`:''}</td>
               <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
+              <td>${t.type==='payment' ? `<span class="badge gold">${esc(t.method||'نقدي')}</span>` : '—'}</td>
               <td>${esc(t.note||'—')}</td>
               <td class="num">${money(t.amount)} ${settings.currency}</td>
-              <td>${t.type==='invoice'?`<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة</button>`:''}</td>
+              <td>${t.type==='invoice'?`<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة</button>`:`<button class="btn sm outline" onclick="printPayment('${t.id}')">طباعة</button>`}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1140,6 +1145,35 @@ function printInvoice(txId){
   window.print();
 }
 
+/* سند قبض (من عميل) أو سند دفع (لمورد) — يوضّح طريقة الدفع بوضوح: نقدي / تحويل بنكي / شيك */
+function printPayment(txId){
+  const t = Store.getTxs().find(x=>x.id===txId);
+  if(!t || t.type!=='payment') return;
+  const p = Store.getParty(t.partyId);
+  const settings = Store.getSettings();
+  const stats = calcPartyStats(p.id);
+  const docTitle = p.type==='customer' ? 'سند قبض' : 'سند دفع';
+
+  document.getElementById('printArea').innerHTML = `
+    ${invHeadHTML(settings)}
+    <div class="row between" style="margin:14px 0;">
+      <div><b>${docTitle} رقم:</b> RC-${String(t.receiptNo||'').padStart(4,'0')}</div>
+      <div><b>التاريخ:</b> ${fmtDate(t.date)} — <b>الوقت:</b> ${t.time||''}</div>
+    </div>
+    <div class="card pad" style="margin-bottom:10px;">
+      <b>${partyLabel(p.type)}:</b> ${esc(p.name)} ${p.phone?(' — هاتف: '+esc(p.phone)):''}
+    </div>
+    <div class="inv-total" style="justify-content:flex-start;"><table style="width:100%;">
+      <tr><td>${p.type==='customer'?'استلمنا من السيد/المذكور أعلاه':'دفعنا للمورد المذكور أعلاه'} مبلغ وقدره</td><td class="num">${money(t.amount)} ${settings.currency}</td></tr>
+      <tr><td>طريقة الدفع</td><td class="num" style="font-weight:900;">${esc(t.method||'نقدي')}</td></tr>
+      ${t.note?`<tr><td>البيان</td><td>${esc(t.note)}</td></tr>`:''}
+      <tr><td>الرصيد الحالي للحساب بعد هذا السند</td><td class="num">${money(Math.abs(stats.balance))} ${settings.currency}</td></tr>
+    </table></div>
+    <div class="inv-foot">تم إنشاء هذا السند عبر دفتر الحسابات الخاص بـ ${esc(settings.companyName)}</div>
+  `;
+  window.print();
+}
+
 function printStatement(partyId){
   const settings = Store.getSettings();
   let txs, party=null, title, filterNote='';
@@ -1175,6 +1209,7 @@ function printStatement(partyId){
       <td>${t.time||''}</td>
       ${partyId?'':`<td>${p?esc(p.name):'—'}</td>`}
       <td>${t.type==='invoice'?'فاتورة':'دفعة'}</td>
+      <td>${t.type==='payment' ? esc(t.method||'نقدي') : '—'}</td>
       <td>${esc(t.note||'—')}</td>
       <td class="num">${money(t.amount)}</td>
       <td class="num">${money(running)}</td>
@@ -1189,8 +1224,8 @@ function printStatement(partyId){
     <h2 style="margin:14px 0 4px;">${esc(title)}</h2>
     <p style="color:#666;font-size:12.5px;margin:0 0 14px;">${filterNote} — تاريخ الطباعة: ${fmtDate(todayStr())}</p>
     <table class="inv-table">
-      <thead><tr><th>التاريخ</th><th>الوقت</th>${partyId?'':'<th>الطرف</th>'}<th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد التراكمي</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد حركات</td></tr>`}</tbody>
+      <thead><tr><th>التاريخ</th><th>الوقت</th>${partyId?'':'<th>الطرف</th>'}<th>النوع</th><th>طريقة الدفع</th><th>البيان</th><th>المبلغ</th><th>الرصيد التراكمي</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="8" style="text-align:center;color:#999;">لا توجد حركات</td></tr>`}</tbody>
     </table>
     <div class="inv-total"><table>
       <tr><td>إجمالي الفواتير</td><td class="num">${money(totalInv)} ${settings.currency}</td></tr>
