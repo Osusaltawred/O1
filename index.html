@@ -345,11 +345,11 @@ function balanceInfo(type, balance){
   if(Math.abs(balance) < 0.005) return { text:"مسدد بالكامل", cls:"balance-zero", badge:"gold" };
   if(type==='customer'){
     return balance>0
-      ? { text:"مستحق عليه (له عندك)", cls:"balance-pos", badge:"red" }
+      ? { text:"الرصيد المستحق", cls:"balance-pos", badge:"red" }
       : { text:"رصيد دائن له (زائد لك)", cls:"balance-neg", badge:"green" };
   }else{
     return balance>0
-      ? { text:"مستحق له عليك (عليك له)", cls:"balance-pos", badge:"red" }
+      ? { text:"الرصيد المستحق", cls:"balance-pos", badge:"red" }
       : { text:"رصيد دائن لك (زائد له)", cls:"balance-neg", badge:"green" };
   }
 }
