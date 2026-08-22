@@ -609,8 +609,8 @@ function renderPartyDetail(app, id){
 
     <div class="card pad" style="margin-bottom:20px;">
       <div class="row" style="gap:10px;">
-        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة / بضاعة</button>
-        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ تسجيل دفعة / سداد</button>
+        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة </button>
+        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ دفعة سداد</button>
         <div class="spacer"></div>
         <input type="date" id="filterFrom" value="${currentPartyFilter.from}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
         <span style="color:var(--muted);font-size:13px;">إلى</span>
