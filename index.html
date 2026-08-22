@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دفتر حسابات — شركة أسس التوريد للتجارة</title>
+
+<!-- ==========================================================
+     خطوط عربية عصرية من Google Fonts (Tajawal للعناوين والنصوص،
+     JetBrains Mono للأرقام المالية لتبدو دقيقة كالدفاتر المحاسبية)
+     ========================================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   1) متغيرات التصميم (الألوان / الخطوط) — غيّر هنا فقط لتبديل الهوية
+   ============================================================ */
+:root{
+  --ink:#173229;        /* أخضر داكن كورق الدفاتر القديمة */
+  --ink-2:#20463a;
+  --paper:#F3F5EF;       /* خلفية الصفحة */
+  --card:#FFFFFF;
+  --line:#DDE3D9;
+  --gold:#B4863A;        /* لون الختم/الذهبي */
+  --gold-light:#F1E4C9;
+  --green:#2E7D4F;
+  --green-bg:#E8F5EC;
+  --red:#B23B3B;
+  --red-bg:#FBEAEA;
+  --muted:#6C7A70;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(23,50,41,.06), 0 1px 2px rgba(23,50,41,.08);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Tajawal',sans-serif;
+  min-height:100vh;
+}
+.num{ font-family:'JetBrains Mono','Tajawal',monospace; font-weight:700; direction:ltr; unicode-bidi:isolate; }
+
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;}
+input,select,textarea{font-family:inherit;}
+
+/* ============================================================
+   2) الهيكل العام: هيدر + تنقل + محتوى
+   ============================================================ */
+#topbar{
+  background:var(--ink);
+  color:#fff;
+  padding:14px 22px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  position:sticky; top:0; z-index:30;
+  box-shadow:var(--shadow);
+}
+#brand{display:flex;align-items:center;gap:12px;flex:1;min-width:220px;}
+#brand img{height:42px;width:42px;object-fit:contain;border-radius:8px;background:#fff;padding:3px;}
+#brand .logo-fallback{
+  height:42px;width:42px;border-radius:8px;background:var(--gold);
+  display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--ink);font-size:18px;
+}
+#brand .titles{line-height:1.25;}
+#brand .titles b{font-size:17px;font-weight:800;display:block;}
+#brand .titles span{font-size:11.5px;color:var(--gold-light);opacity:.85;}
+
+nav#tabs{display:flex;gap:4px;flex-wrap:wrap;}
+nav#tabs button{
+  background:transparent;color:#e9efe9;padding:9px 14px;border-radius:10px;font-size:14px;font-weight:700;
+  transition:.15s;
+}
+nav#tabs button:hover{background:rgba(255,255,255,.08);}
+nav#tabs button.active{background:var(--gold);color:var(--ink);}
+
+main{max-width:1180px;margin:0 auto;padding:22px 18px 60px;}
+
+/* ============================================================
+   3) عناصر عامة: بطاقات / أزرار / جداول / نماذج
+   ============================================================ */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);}
+.pad{padding:20px;}
+.grid{display:grid;gap:16px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}}
+
+.stat{padding:18px;border-radius:var(--radius);background:var(--card);border:1px solid var(--line);position:relative;overflow:hidden;}
+.stat .lbl{font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.stat .val{font-size:24px;font-weight:800;}
+.stat.gold{border-color:var(--gold);}
+.stat.gold::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:5px;background:var(--gold);}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;justify-content:center;
+  padding:10px 16px;border-radius:10px;font-weight:700;font-size:14px;
+  background:var(--ink);color:#fff;transition:.15s;
+}
+.btn:hover{background:var(--ink-2);}
+.btn.gold{background:var(--gold);color:var(--ink);}
+.btn.gold:hover{filter:brightness(1.06);}
+.btn.outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn.outline:hover{border-color:var(--ink);}
+.btn.danger{background:var(--red-bg);color:var(--red);}
+.btn.danger:hover{background:#f6d9d9;}
+.btn.sm{padding:6px 11px;font-size:12.5px;border-radius:8px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+h1{font-size:22px;font-weight:800;margin:0 0 4px;}
+h2{font-size:18px;font-weight:800;margin:0 0 14px;}
+.subtitle{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.row.between{justify-content:space-between;}
+.spacer{flex:1;}
+
+table{width:100%;border-collapse:collapse;font-size:14px;}
+thead th{
+  text-align:right;font-size:12.5px;color:var(--muted);font-weight:800;
+  padding:10px 12px;border-bottom:2px solid var(--line);white-space:nowrap;
+}
+tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tbody tr:hover{background:#FAFBF8;}
+.table-wrap{overflow-x:auto;}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px;}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:800;}
+.badge.green{background:var(--green-bg);color:var(--green);}
+.badge.red{background:var(--red-bg);color:var(--red);}
+.badge.gold{background:var(--gold-light);color:#7a5a1e;}
+
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.field label{font-size:13px;font-weight:700;color:var(--ink-2);}
+.field input,.field select,.field textarea{
+  padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink);
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);}
+.field textarea{resize:vertical;min-height:70px;}
+.hint{font-size:11.5px;color:var(--muted);}
+
+/* نافذة منبثقة (Modal) */
+.overlay{
+  position:fixed;inset:0;background:rgba(23,50,41,.45);display:none;align-items:flex-start;justify-content:center;
+  padding:40px 14px;overflow-y:auto;z-index:100;
+}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h2{margin:0;}
+.modal-close{background:none;color:var(--muted);font-size:22px;line-height:1;padding:4px 8px;border-radius:8px;}
+.modal-close:hover{background:var(--paper);}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+
+.tabbar{display:flex;gap:6px;border-bottom:2px solid var(--line);margin-bottom:18px;}
+.tabbar button{padding:9px 4px;margin-left:18px;background:none;font-weight:800;color:var(--muted);border-bottom:3px solid transparent;font-size:14px;}
+.tabbar button.active{color:var(--ink);border-color:var(--gold);}
+
+.itemrow{display:grid;grid-template-columns:1fr 70px 100px 100px 34px;gap:8px;align-items:center;margin-bottom:8px;}
+@media(max-width:560px){.itemrow{grid-template-columns:1fr 1fr;} }
+.itemrow input{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:13.5px;}
+.item-del{background:var(--red-bg);color:var(--red);width:30px;height:30px;border-radius:8px;font-weight:900;}
+
+.link{color:var(--gold);font-weight:700;cursor:pointer;}
+.link:hover{text-decoration:underline;}
+
+.balance-pos{color:var(--red);}   /* عليه / مستحق منه أو له */
+.balance-neg{color:var(--green);} /* رصيد دائن */
+.balance-zero{color:var(--muted);}
+
+/* خط دفتري زخرفي في صفحة الرئيسية (العنصر المميز للتصميم) */
+.ledger-hero{
+  position:relative;border-radius:20px;overflow:hidden;background:var(--ink);color:#fff;padding:34px 28px;margin-bottom:22px;
+  background-image:repeating-linear-gradient(to bottom, transparent, transparent 33px, rgba(255,255,255,.06) 34px);
+}
+.ledger-hero::after{
+  content:"";position:absolute;top:0;bottom:0;right:64px;width:2px;background:rgba(180,134,58,.55);
+}
+.ledger-hero h1{color:#fff;font-size:26px;}
+.ledger-hero p{color:#cfd8cf;margin:6px 0 0;font-size:14px;max-width:520px;}
+.ledger-hero .tag{display:inline-block;background:var(--gold);color:var(--ink);font-weight:800;font-size:12px;padding:4px 12px;border-radius:99px;margin-bottom:12px;}
+
+/* أزرار سريعة في الرئيسية */
+.quick{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px;}
+.quick a,.quick button{
+  flex:1;min-width:200px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+  color:#fff;padding:16px;border-radius:14px;text-align:center;font-weight:800;font-size:15px;transition:.15s;
+}
+.quick a:hover,.quick button:hover{background:rgba(255,255,255,.16);}
+
+footer.appfoot{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
+
+/* ============================================================
+   4) الطباعة (فاتورة / كشف حساب)
+   ============================================================ */
+#printArea{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{display:block !important;position:absolute;top:0;right:0;left:0;padding:26px;}
+  .no-print{display:none !important;}
+}
+.inv-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--ink);padding-bottom:14px;margin-bottom:18px;}
+.inv-head img{height:56px;}
+.inv-co{font-weight:900;font-size:19px;}
+.inv-co small{display:block;font-weight:500;color:var(--muted);font-size:12px;}
+.inv-meta{text-align:left;font-size:13px;}
+.inv-meta div{margin-bottom:3px;}
+.seal{
+  width:110px;height:110px;border:2.5px dashed var(--gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;text-align:center;color:var(--gold);
+  font-weight:800;font-size:11px;transform:rotate(-14deg);padding:10px;line-height:1.3;opacity:.85;
+}
+.inv-table{width:100%;border-collapse:collapse;margin:16px 0;}
+.inv-table th{background:var(--paper);text-align:right;padding:8px 10px;font-size:12.5px;border:1px solid var(--line);}
+.inv-table td{padding:8px 10px;border:1px solid var(--line);font-size:13px;}
+.inv-total{margin-top:10px;display:flex;justify-content:flex-end;}
+.inv-total table{width:280px;}
+.inv-total td{padding:6px 10px;font-size:13.5px;}
+.inv-total tr:last-child td{font-weight:900;font-size:15.5px;border-top:2px solid var(--ink);}
+.inv-foot{margin-top:30px;font-size:12px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="brand">
+    <span id="logoBox"></span>
+    <div class="titles">
+      <b id="coNameTop">شركة أسس التوريد للتجارة</b>
+      <span>دفتر الحسابات الخاص</span>
+    </div>
+  </div>
+  <nav id="tabs">
+    <button data-r="#/home">الرئيسية</button>
+    <button data-r="#/customers">العملاء</button>
+    <button data-r="#/suppliers">الموردين</button>
+    <button data-r="#/transactions">سجل الحركات</button>
+    <button data-r="#/settings">الإعدادات والنسخ الاحتياطي</button>
+  </nav>
+</div>
+
+<main id="app"></main>
+
+<footer class="appfoot">دفتر حسابات شركة أسس التوريد للتجارة — البيانات محفوظة محلياً في هذا المتصفح فقط</footer>
+
+<!-- منطقة الطباعة (فاتورة / كشف حساب) -->
+<div id="printArea"></div>
+
+<!-- نافذة منبثقة عامة تُستخدم لكل النماذج -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">عنوان</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   دفتر حسابات — شركة أسس التوريد للتجارة
+   ملف واحد يعمل مباشرة بدون تثبيت. كل البيانات تُحفظ في المتصفح
+   عبر localStorage. الكود مقسّم لأقسام واضحة لتسهيل التعديل.
+   ================================================================ */
+
+/* ---------- 1) الإعدادات الافتراضية (عدّل هنا بسهولة) ---------- */
+const DEFAULT_SETTINGS = {
+  companyName: "شركة أسس التوريد للتجارة",
+  // ألصق رابط شعار الشركة هنا بين علامتي التنصيص (يُفضّل رابط صورة مباشر PNG/JPG شفاف الخلفية)
+  logoUrl: "",
+  phone: "",
+  address: "",
+  currency: "ر.س",
+  invoiceCounter: 1
+};
+
+/* ---------- 2) طبقة التخزين (Store) ---------- */
+const LS_KEYS = { parties:"asas_parties", txs:"asas_transactions", settings:"asas_settings" };
+
+const Store = {
+  getParties(){ return JSON.parse(localStorage.getItem(LS_KEYS.parties) || "[]"); },
+  saveParties(list){ localStorage.setItem(LS_KEYS.parties, JSON.stringify(list)); },
+
+  getTxs(){ return JSON.parse(localStorage.getItem(LS_KEYS.txs) || "[]"); },
+  saveTxs(list){ localStorage.setItem(LS_KEYS.txs, JSON.stringify(list)); },
+
+  getSettings(){
+    const s = JSON.parse(localStorage.getItem(LS_KEYS.settings) || "null");
+    return s ? {...DEFAULT_SETTINGS, ...s} : {...DEFAULT_SETTINGS};
+  },
+  saveSettings(s){ localStorage.setItem(LS_KEYS.settings, JSON.stringify(s)); },
+
+  addParty(p){ const list=this.getParties(); list.push(p); this.saveParties(list); },
+  updateParty(id,patch){ const list=this.getParties(); const i=list.findIndex(x=>x.id===id); if(i>-1){list[i]={...list[i],...patch}; this.saveParties(list);} },
+  deleteParty(id){ this.saveParties(this.getParties().filter(p=>p.id!==id)); this.saveTxs(this.getTxs().filter(t=>t.partyId!==id)); },
+  getParty(id){ return this.getParties().find(p=>p.id===id); },
+
+  addTx(t){ const list=this.getTxs(); list.push(t); this.saveTxs(list); },
+  deleteTx(id){ this.saveTxs(this.getTxs().filter(t=>t.id!==id)); },
+
+  nextInvoiceNo(){ const s=this.getSettings(); const n=s.invoiceCounter||1; s.invoiceCounter=n+1; this.saveSettings(s); return n; }
+};
+
+/* ---------- 3) أدوات مساعدة ---------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const todayStr = () => new Date().toISOString().slice(0,10);
+const nowTimeStr = () => { const d=new Date(); return d.toTimeString().slice(0,5); };
+const fmtDate = (d) => { if(!d) return "—"; const [y,m,day]=d.split("-"); return `${day}/${m}/${y}`; };
+function money(n){
+  n = Number(n)||0;
+  return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function esc(s){ return (s??"").toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function partyLabel(type){ return type==='customer' ? 'عميل' : 'مورد'; }
+
+/* حساب إجماليات طرف معيّن: إجمالي الفواتير / إجمالي المسدد / الرصيد الحالي */
+function calcPartyStats(partyId, txs){
+  txs = txs || Store.getTxs().filter(t=>t.partyId===partyId);
+  let invoiced=0, paid=0;
+  txs.forEach(t=>{ if(t.type==='invoice') invoiced+=Number(t.amount); else paid+=Number(t.amount); });
+  return { invoiced, paid, balance: invoiced - paid, remaining: Math.max(invoiced-paid,0) };
+}
+
+/* وصف حالة الرصيد حسب نوع الطرف */
+function balanceInfo(type, balance){
+  if(Math.abs(balance) < 0.005) return { text:"مسدد بالكامل", cls:"balance-zero", badge:"gold" };
+  if(type==='customer'){
+    return balance>0
+      ? { text:"مستحق عليه (له عندك)", cls:"balance-pos", badge:"red" }
+      : { text:"رصيد دائن له (زائد لك)", cls:"balance-neg", badge:"green" };
+  }else{
+    return balance>0
+      ? { text:"مستحق له عليك (عليك له)", cls:"balance-pos", badge:"red" }
+      : { text:"رصيد دائن لك (زائد له)", cls:"balance-neg", badge:"green" };
+  }
+}
+
+/* ---------- 4) التوجيه (Router) بسيط عبر الـ hash ---------- */
+window.addEventListener('hashchange', route);
+window.addEventListener('DOMContentLoaded', ()=>{
+  applyBranding();
+  if(!location.hash) location.hash = "#/home";
+  route();
+});
+
+function setActiveTab(hash){
+  document.querySelectorAll('#tabs button').forEach(b=>{
+    b.classList.toggle('active', hash.startsWith(b.dataset.r));
+  });
+}
+
+function route(){
+  const hash = location.hash || "#/home";
+  setActiveTab(hash);
+  const app = document.getElementById('app');
+  const [, path, param] = hash.match(/^#\/([a-z]+)(?:\/(.+))?$/) || [,'home'];
+
+  if(path==='home') return renderHome(app);
+  if(path==='customers') return renderPartyList(app,'customer');
+  if(path==='suppliers') return renderPartyList(app,'supplier');
+  if(path==='party') return renderPartyDetail(app, param);
+  if(path==='transactions') return renderAllTransactions(app);
+  if(path==='settings') return renderSettings(app);
+  app.innerHTML = "<p>الصفحة غير موجودة</p>";
+}
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  location.hash = b.dataset.r;
+});
+
+/* ---------- 5) شعار الشركة في الأعلى ---------- */
+function applyBranding(){
+  const s = Store.getSettings();
+  document.getElementById('coNameTop').textContent = s.companyName || "دفتر الحسابات";
+  const box = document.getElementById('logoBox');
+  box.innerHTML = s.logoUrl
+    ? `<img src="${esc(s.logoUrl)}" alt="شعار الشركة" onerror="this.parentNode.innerHTML='<span class=&quot;logo-fallback&quot;>${esc((s.companyName||'أ')[0])}</span>'">`
+    : `<span class="logo-fallback">${esc((s.companyName||'أ')[0])}</span>`;
+}
+
+/* ================================================================
+   6) صفحة الرئيسية
+   ================================================================ */
+function renderHome(app){
+  const parties = Store.getParties();
+  const txs = Store.getTxs();
+  const customers = parties.filter(p=>p.type==='customer');
+  const suppliers = parties.filter(p=>p.type==='supplier');
+
+  let dueFromCustomers=0, dueToSuppliers=0;
+  customers.forEach(c=>{ const b=calcPartyStats(c.id,txs.filter(t=>t.partyId===c.id)).balance; if(b>0) dueFromCustomers+=b; });
+  suppliers.forEach(s=>{ const b=calcPartyStats(s.id,txs.filter(t=>t.partyId===s.id)).balance; if(b>0) dueToSuppliers+=b; });
+
+  const settings = Store.getSettings();
+  const recent = [...txs].sort((a,b)=> b.createdAt.localeCompare(a.createdAt)).slice(0,6);
+
+  app.innerHTML = `
+    <div class="ledger-hero">
+      <span class="tag">دفتر الحسابات</span>
+      <h1>${esc(settings.companyName)}</h1>
+      <p>نظرة سريعة وشاملة على حسابات العملاء والموردين، بالريال وبالتاريخ والوقت، محفوظة على جهازك فقط.</p>
+      <div class="quick">
+        <a href="#/customers">👥 حسابات العملاء</a>
+        <a href="#/suppliers">🚚 حسابات الموردين</a>
+        <a href="#/transactions">🧾 سجل كل الحركات</a>
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-bottom:22px;">
+      <div class="stat"><div class="lbl">عدد العملاء</div><div class="val num">${customers.length}</div></div>
+      <div class="stat"><div class="lbl">عدد الموردين</div><div class="val num">${suppliers.length}</div></div>
+      <div class="stat gold"><div class="lbl">إجمالي مستحق من العملاء</div><div class="val num balance-pos">${money(dueFromCustomers)} ${settings.currency}</div></div>
+      <div class="stat gold"><div class="lbl">إجمالي مستحق للموردين (عليك)</div><div class="val num balance-pos">${money(dueToSuppliers)} ${settings.currency}</div></div>
+    </div>
+
+    <div class="card pad">
+      <div class="row between"><h2>آخر الحركات</h2><span class="link" onclick="location.hash='#/transactions'">عرض الكل ←</span></div>
+      ${recent.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>الطرف</th><th>النوع</th><th>البيان</th><th>المبلغ</th></tr></thead>
+        <tbody>
+          ${recent.map(t=>{
+            const p = Store.getParty(t.partyId);
+            return `<tr>
+              <td>${fmtDate(t.date)}</td>
+              <td class="num">${t.time||'—'}</td>
+              <td>${p?esc(p.name):'—'} <span class="badge ${p&&p.type==='customer'?'gold':'green'}" style="margin-right:4px;">${p?partyLabel(p.type):''}</span></td>
+              <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
+              <td>${esc(t.note||'—')}</td>
+              <td class="num">${money(t.amount)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>` : `<div class="empty"><b>لا توجد حركات بعد</b>ابدأ بإضافة عميل أو مورد ثم سجّل أول فاتورة أو دفعة</div>`}
+    </div>
+  `;
+}
+
+/* ================================================================
+   7) قائمة العملاء / الموردين
+   ================================================================ */
+function renderPartyList(app, type){
+  const parties = Store.getParties().filter(p=>p.type===type);
+  const txs = Store.getTxs();
+  const settings = Store.getSettings();
+  const title = type==='customer' ? 'حسابات العملاء' : 'حسابات الموردين';
+  const addLabel = type==='customer' ? 'إضافة عميل جديد' : 'إضافة مورد جديد';
+
+  app.innerHTML = `
+    <div class="row between" style="margin-bottom:16px;">
+      <div><h1>${title}</h1><p class="subtitle">${type==='customer' ? 'إدارة عملائك ومتابعة مستحقاتهم ومدفوعاتهم' : 'إدارة مورديك ومتابعة ما لهم وما عليهم'}</p></div>
+      <button class="btn gold" onclick="openPartyForm('${type}')">+ ${addLabel}</button>
+    </div>
+
+    <div class="card">
+      ${parties.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>الاسم</th><th>الهاتف</th><th>إجمالي الفواتير</th><th>المسدد</th><th>الرصيد الحالي</th><th>الحالة</th><th></th></tr></thead>
+        <tbody>
+          ${parties.map(p=>{
+            const st = calcPartyStats(p.id, txs.filter(t=>t.partyId===p.id));
+            const bi = balanceInfo(type, st.balance);
+            return `<tr>
+              <td><b>${esc(p.name)}</b></td>
+              <td class="num">${esc(p.phone||'—')}</td>
+              <td class="num">${money(st.invoiced)}</td>
+              <td class="num">${money(st.paid)}</td>
+              <td class="num ${bi.cls}">${money(Math.abs(st.balance))} <span class="badge ${bi.badge}" style="margin-inline-start:6px;">${bi.text}</span></td>
+              <td>${Math.abs(st.balance)<0.005 ? '<span class="badge gold">لا يوجد رصيد</span>' : ''}</td>
+              <td class="row" style="gap:6px;">
+                <button class="btn sm outline" onclick="location.hash='#/party/${p.id}'">كشف الحساب</button>
+                <button class="btn sm danger" onclick="confirmDeleteParty('${p.id}')">حذف</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+      ` : `<div class="empty"><b>لا يوجد ${type==='customer'?'عملاء':'موردون'} بعد</b>اضغط على زر "${addLabel}" للبدء</div>`}
+    </div>
+  `;
+}
+
+function confirmDeleteParty(id){
+  const p = Store.getParty(id);
+  if(!p) return;
+  if(confirm(`هل تريد حذف "${p.name}" وكل حركاته؟ لا يمكن التراجع عن هذا الإجراء.`)){
+    Store.deleteParty(id);
+    route();
+  }
+}
+
+/* ---------- نموذج إضافة/تعديل طرف (عميل أو مورد) ---------- */
+function openPartyForm(type, existing){
+  document.getElementById('modalTitle').textContent = existing
+    ? `تعديل بيانات ${partyLabel(type)}`
+    : (type==='customer' ? 'إضافة عميل جديد' : 'إضافة مورد جديد');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="field"><label>الاسم *</label><input id="pf_name" value="${existing?esc(existing.name):''}" placeholder="اسم ${type==='customer'?'العميل':'المورد'}"></div>
+    <div class="field"><label>رقم الهاتف</label><input id="pf_phone" value="${existing?esc(existing.phone||''):''}" placeholder="05xxxxxxxx"></div>
+    <div class="field"><label>ملاحظات</label><textarea id="pf_note" placeholder="أي تفاصيل إضافية">${existing?esc(existing.note||''):''}</textarea></div>
+  `;
+  document.getElementById('modalFoot').innerHTML = `
+    <button class="btn outline" onclick="closeModal()">إلغاء</button>
+    <button class="btn gold" onclick="savePartyForm('${type}','${existing?existing.id:''}')">حفظ</button>
+  `;
+  openModal();
+}
+
+function savePartyForm(type, id){
+  const name = document.getElementById('pf_name').value.trim();
+  if(!name){ alert('الرجاء إدخال الاسم'); return; }
+  const phone = document.getElementById('pf_phone').value.trim();
+  const note = document.getElementById('pf_note').value.trim();
+
+  if(id){
+    Store.updateParty(id, {name, phone, note});
+  }else{
+    Store.addParty({ id:uid(), type, name, phone, note, createdAt:new Date().toISOString() });
+  }
+  closeModal();
+  route();
+}
+
+/* ================================================================
+   8) صفحة تفاصيل الطرف — كشف الحساب الكامل
+   ================================================================ */
+let currentPartyFilter = { from:'', to:'' };
+
+function renderPartyDetail(app, id){
+  const p = Store.getParty(id);
+  if(!p){ app.innerHTML = `<div class="empty"><b>لم يتم العثور على الحساب</b></div>`; return; }
+
+  let txs = Store.getTxs().filter(t=>t.partyId===id).sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time) || a.createdAt.localeCompare(b.createdAt));
+  const allStats = calcPartyStats(id, txs);
+
+  // تطبيق فلتر التاريخ (للعرض والطباعة فقط، لا يؤثر على الرصيد الكلي)
+  let filtered = txs;
+  if(currentPartyFilter.from) filtered = filtered.filter(t=>t.date >= currentPartyFilter.from);
+  if(currentPartyFilter.to) filtered = filtered.filter(t=>t.date <= currentPartyFilter.to);
+
+  const bi = balanceInfo(p.type, allStats.balance);
+  const settings = Store.getSettings();
+
+  // حساب الرصيد التراكمي بعد كل حركة (على كامل السجل بترتيبه الزمني)
+  let running = 0;
+  const runningMap = {};
+  txs.forEach(t=>{ running += (t.type==='invoice'? Number(t.amount) : -Number(t.amount)); runningMap[t.id]=running; });
+
+  app.innerHTML = `
+    <div class="row" style="margin-bottom:10px;">
+      <span class="link" onclick="location.hash='${p.type==='customer'?'#/customers':'#/suppliers'}'">← رجوع لقائمة ${p.type==='customer'?'العملاء':'الموردين'}</span>
+    </div>
+    <div class="row between" style="margin-bottom:18px;align-items:flex-start;">
+      <div>
+        <h1>${esc(p.name)} <span class="badge ${p.type==='customer'?'gold':'green'}">${partyLabel(p.type)}</span></h1>
+        <p class="subtitle">${p.phone?('هاتف: '+esc(p.phone)):'بدون رقم هاتف'} ${p.note?(' — '+esc(p.note)):''}</p>
+      </div>
+      <div class="row" style="gap:8px;">
+        <button class="btn outline" onclick="editParty('${p.id}')">✎ تعديل البيانات</button>
+        <button class="btn outline" onclick="printStatement('${p.id}')">🖨 طباعة كشف الحساب</button>
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-bottom:20px;">
+      <div class="stat"><div class="lbl">إجمالي الفواتير</div><div class="val num">${money(allStats.invoiced)} ${settings.currency}</div></div>
+      <div class="stat"><div class="lbl">إجمالي المسدد</div><div class="val num">${money(allStats.paid)} ${settings.currency}</div></div>
+      <div class="stat"><div class="lbl">المتبقي (غير مسدد)</div><div class="val num balance-pos">${money(allStats.remaining)} ${settings.currency}</div></div>
+      <div class="stat gold"><div class="lbl">الرصيد الحالي</div><div class="val num ${bi.cls}">${money(Math.abs(allStats.balance))} ${settings.currency}<div style="font-size:11.5px;font-weight:700;margin-top:3px;">${bi.text}</div></div></div>
+    </div>
+
+    <div class="card pad" style="margin-bottom:20px;">
+      <div class="row" style="gap:10px;">
+        <button class="btn gold" onclick="openTxForm('${p.id}','invoice')">+ إضافة فاتورة / بضاعة</button>
+        <button class="btn" onclick="openTxForm('${p.id}','payment')">+ تسجيل دفعة / سداد</button>
+        <div class="spacer"></div>
+        <input type="date" id="filterFrom" value="${currentPartyFilter.from}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
+        <span style="color:var(--muted);font-size:13px;">إلى</span>
+        <input type="date" id="filterTo" value="${currentPartyFilter.to}" style="padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;">
+        <button class="btn sm outline" onclick="applyPartyFilter('${p.id}')">تصفية</button>
+        <button class="btn sm outline" onclick="resetPartyFilter('${p.id}')">إعادة تعيين</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pad" style="padding-bottom:0;"><h2>سجل حركات الحساب</h2></div>
+      ${filtered.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد بعدها</th><th></th></tr></thead>
+        <tbody>
+          ${filtered.map(t=>`
+            <tr>
+              <td>${fmtDate(t.date)}</td>
+              <td class="num">${t.time||'—'}</td>
+              <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
+              <td>${esc(t.note||(t.type==='invoice'?'فاتورة بضاعة':'دفعة نقدية'))}</td>
+              <td class="num">${money(t.amount)} ${settings.currency}</td>
+              <td class="num">${money(runningMap[t.id])}</td>
+              <td class="row" style="gap:6px;">
+                ${t.type==='invoice' ? `<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة الفاتورة</button>`:''}
+                <button class="btn sm danger" onclick="confirmDeleteTx('${t.id}','${p.id}')">حذف</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table></div>
+      ` : `<div class="empty"><b>لا توجد حركات ضمن هذا النطاق</b>أضف فاتورة أو دفعة لتبدأ متابعة الحساب</div>`}
+    </div>
+  `;
+}
+
+function editParty(id){ openPartyForm(Store.getParty(id).type, Store.getParty(id)); }
+
+function applyPartyFilter(id){
+  currentPartyFilter.from = document.getElementById('filterFrom').value;
+  currentPartyFilter.to = document.getElementById('filterTo').value;
+  renderPartyDetail(document.getElementById('app'), id);
+}
+function resetPartyFilter(id){
+  currentPartyFilter = {from:'',to:''};
+  renderPartyDetail(document.getElementById('app'), id);
+}
+
+function confirmDeleteTx(txId, partyId){
+  if(confirm('هل تريد حذف هذه الحركة نهائياً؟')){
+    Store.deleteTx(txId);
+    renderPartyDetail(document.getElementById('app'), partyId);
+  }
+}
+
+/* ---------- نموذج إضافة فاتورة / دفعة ---------- */
+let invoiceItemsTemp = [];
+
+function openTxForm(partyId, type){
+  const p = Store.getParty(partyId);
+  const settings = Store.getSettings();
+  invoiceItemsTemp = type==='invoice' ? [{name:'',qty:1,price:0}] : [];
+
+  document.getElementById('modalTitle').textContent = type==='invoice'
+    ? `إضافة فاتورة — ${p.name}`
+    : `تسجيل دفعة — ${p.name}`;
+
+  let body = `
+    <div class="grid grid-2">
+      <div class="field"><label>التاريخ</label><input type="date" id="tf_date" value="${todayStr()}"></div>
+      <div class="field"><label>الوقت</label><input type="time" id="tf_time" value="${nowTimeStr()}"></div>
+    </div>
+  `;
+
+  if(type==='invoice'){
+    body += `
+      <label style="font-size:13px;font-weight:700;color:var(--ink-2);">بنود الفاتورة (اختياري — أو استخدم بياناً عاماً بالأسفل)</label>
+      <div id="itemsBox" style="margin-top:8px;"></div>
+      <button class="btn sm outline" type="button" onclick="addItemRow()" style="margin-bottom:14px;">+ إضافة صنف</button>
+      <div class="field"><label>ملاحظة عامة (تظهر في الفاتورة)</label><input id="tf_note" placeholder="مثال: توريد مواد بناء"></div>
+      <div class="row between" style="background:var(--paper);padding:12px 14px;border-radius:10px;">
+        <b>الإجمالي</b><b class="num" id="tf_total_display">0.00 ${settings.currency}</b>
+      </div>
+    `;
+  }else{
+    body += `
+      <div class="field"><label>المبلغ المسدد *</label><input type="number" step="0.01" id="tf_amount" placeholder="0.00"></div>
+      <div class="field"><label>طريقة السداد</label>
+        <select id="tf_method"><option value="نقدي">نقدي</option><option value="تحويل بنكي">تحويل بنكي</option><option value="شيك">شيك</option><option value="أخرى">أخرى</option></select>
+      </div>
+      <div class="field"><label>ملاحظة</label><input id="tf_note" placeholder="اختياري"></div>
+    `;
+  }
+
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalFoot').innerHTML = `
+    <button class="btn outline" onclick="closeModal()">إلغاء</button>
+    <button class="btn gold" onclick="saveTxForm('${partyId}','${type}')">حفظ ${type==='invoice'?'الفاتورة':'الدفعة'}</button>
+  `;
+  if(type==='invoice') renderItemRows();
+  openModal();
+}
+
+function renderItemRows(){
+  const box = document.getElementById('itemsBox');
+  box.innerHTML = invoiceItemsTemp.map((it,i)=>`
+    <div class="itemrow">
+      <input placeholder="اسم الصنف" value="${esc(it.name)}" oninput="invoiceItemsTemp[${i}].name=this.value">
+      <input type="number" placeholder="الكمية" value="${it.qty}" oninput="invoiceItemsTemp[${i}].qty=Number(this.value)||0; updateInvTotal();">
+      <input type="number" placeholder="السعر" value="${it.price}" oninput="invoiceItemsTemp[${i}].price=Number(this.value)||0; updateInvTotal();">
+      <span class="num" style="font-size:13px;">${money(it.qty*it.price)}</span>
+      <button class="item-del" onclick="removeItemRow(${i})" type="button">×</button>
+    </div>
+  `).join('');
+  updateInvTotal();
+}
+function addItemRow(){ invoiceItemsTemp.push({name:'',qty:1,price:0}); renderItemRows(); }
+function removeItemRow(i){ invoiceItemsTemp.splice(i,1); renderItemRows(); }
+function updateInvTotal(){
+  const total = invoiceItemsTemp.reduce((s,it)=>s+(Number(it.qty)*Number(it.price)),0);
+  const el = document.getElementById('tf_total_display');
+  if(el) el.textContent = money(total) + ' ' + Store.getSettings().currency;
+  renderItemRowsOnlyValues();
+}
+function renderItemRowsOnlyValues(){
+  const box = document.getElementById('itemsBox');
+  if(!box) return;
+  [...box.children].forEach((row,i)=>{
+    const span = row.querySelector('span.num');
+    if(span && invoiceItemsTemp[i]) span.textContent = money(invoiceItemsTemp[i].qty*invoiceItemsTemp[i].price);
+  });
+}
+
+function saveTxForm(partyId, type){
+  const date = document.getElementById('tf_date').value || todayStr();
+  const time = document.getElementById('tf_time').value || nowTimeStr();
+  const note = (document.getElementById('tf_note')?.value || '').trim();
+
+  let amount, items=null, invoiceNo=null;
+  if(type==='invoice'){
+    const validItems = invoiceItemsTemp.filter(it=>it.name.trim() && (Number(it.qty)>0));
+    amount = validItems.reduce((s,it)=>s+(Number(it.qty)*Number(it.price)),0);
+    if(amount<=0){ alert('أدخل بنود الفاتورة بشكل صحيح (صنف وكمية وسعر) أو مبلغاً أكبر من صفر'); return; }
+    items = validItems;
+    invoiceNo = Store.nextInvoiceNo();
+  }else{
+    amount = Number(document.getElementById('tf_amount').value);
+    if(!amount || amount<=0){ alert('أدخل مبلغاً صحيحاً أكبر من صفر'); return; }
+  }
+
+  Store.addTx({
+    id:uid(), partyId, type, amount, date, time, note,
+    items, invoiceNo,
+    method: type==='payment' ? document.getElementById('tf_method').value : null,
+    createdAt: new Date().toISOString()
+  });
+
+  closeModal();
+  renderPartyDetail(document.getElementById('app'), partyId);
+}
+
+/* ================================================================
+   9) سجل جميع الحركات (لكل العملاء والموردين)
+   ================================================================ */
+let txFilter = { partyType:'all', partyId:'all', from:'', to:'' };
+
+function renderAllTransactions(app){
+  const parties = Store.getParties();
+  let txs = Store.getTxs();
+
+  if(txFilter.partyType!=='all'){
+    const ids = parties.filter(p=>p.type===txFilter.partyType).map(p=>p.id);
+    txs = txs.filter(t=>ids.includes(t.partyId));
+  }
+  if(txFilter.partyId!=='all') txs = txs.filter(t=>t.partyId===txFilter.partyId);
+  if(txFilter.from) txs = txs.filter(t=>t.date>=txFilter.from);
+  if(txFilter.to) txs = txs.filter(t=>t.date<=txFilter.to);
+  txs.sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time) || b.createdAt.localeCompare(a.createdAt));
+
+  const settings = Store.getSettings();
+  const partyOptions = parties.map(p=>`<option value="${p.id}" ${txFilter.partyId===p.id?'selected':''}>${esc(p.name)} (${partyLabel(p.type)})</option>`).join('');
+
+  app.innerHTML = `
+    <div class="row between" style="margin-bottom:16px;">
+      <div><h1>سجل جميع الحركات</h1><p class="subtitle">كل الفواتير والدفعات لكل العملاء والموردين، مرتبة بالتاريخ والوقت</p></div>
+      <button class="btn outline" onclick="printStatement(null)">🖨 طباعة الكشف الظاهر</button>
+    </div>
+
+    <div class="card pad" style="margin-bottom:18px;">
+      <div class="row" style="gap:10px;">
+        <select id="f_type" onchange="txFilter.partyType=this.value; txFilter.partyId='all'; route();">
+          <option value="all" ${txFilter.partyType==='all'?'selected':''}>كل الأطراف</option>
+          <option value="customer" ${txFilter.partyType==='customer'?'selected':''}>العملاء فقط</option>
+          <option value="supplier" ${txFilter.partyType==='supplier'?'selected':''}>الموردين فقط</option>
+        </select>
+        <select id="f_party" onchange="txFilter.partyId=this.value; route();">
+          <option value="all">طرف محدد (اختياري)</option>
+          ${partyOptions}
+        </select>
+        <input type="date" id="f_from" value="${txFilter.from}" onchange="txFilter.from=this.value; route();">
+        <span style="color:var(--muted);font-size:13px;">إلى</span>
+        <input type="date" id="f_to" value="${txFilter.to}" onchange="txFilter.to=this.value; route();">
+        <button class="btn sm outline" onclick="txFilter={partyType:'all',partyId:'all',from:'',to:''}; route();">إعادة تعيين</button>
+      </div>
+    </div>
+
+    <div class="card">
+      ${txs.length ? `
+      <div class="table-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>الطرف</th><th>النوع</th><th>البيان</th><th>المبلغ</th><th></th></tr></thead>
+        <tbody>
+          ${txs.map(t=>{
+            const p = parties.find(x=>x.id===t.partyId);
+            return `<tr>
+              <td>${fmtDate(t.date)}</td>
+              <td class="num">${t.time||'—'}</td>
+              <td>${p?`<a class="link" onclick="location.hash='#/party/${p.id}'">${esc(p.name)}</a>`:'محذوف'} ${p?`<span class="badge ${p.type==='customer'?'gold':'green'}">${partyLabel(p.type)}</span>`:''}</td>
+              <td>${t.type==='invoice'?'<span class="badge red">فاتورة</span>':'<span class="badge green">دفعة</span>'}</td>
+              <td>${esc(t.note||'—')}</td>
+              <td class="num">${money(t.amount)} ${settings.currency}</td>
+              <td>${t.type==='invoice'?`<button class="btn sm outline" onclick="printInvoice('${t.id}')">طباعة</button>`:''}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+      ` : `<div class="empty"><b>لا توجد حركات مطابقة</b>جرّب تعديل نطاق البحث أو الفلاتر</div>`}
+    </div>
+  `;
+}
+
+/* ================================================================
+   10) الإعدادات + النسخ الاحتياطي والاستعادة
+   ================================================================ */
+function renderSettings(app){
+  const s = Store.getSettings();
+  app.innerHTML = `
+    <h1>الإعدادات والنسخ الاحتياطي</h1>
+    <p class="subtitle">بيانات الشركة تظهر في الفواتير وكشوف الحساب، والنسخ الاحتياطي يحفظ جميع بياناتك في ملف واحد</p>
+
+    <div class="grid grid-2">
+      <div class="card pad">
+        <h2>بيانات الشركة</h2>
+        <div class="field"><label>اسم الشركة</label><input id="s_name" value="${esc(s.companyName)}"></div>
+        <div class="field"><label>رابط شعار الشركة (URL)</label><input id="s_logo" value="${esc(s.logoUrl)}" placeholder="https://example.com/logo.png"><span class="hint">يمكنك أيضاً لصق الرابط مباشرة في الكود ضمن DEFAULT_SETTINGS.logoUrl</span></div>
+        <div class="field"><label>رقم الهاتف</label><input id="s_phone" value="${esc(s.phone)}"></div>
+        <div class="field"><label>العنوان</label><input id="s_address" value="${esc(s.address)}"></div>
+        <div class="field"><label>رمز العملة</label><input id="s_currency" value="${esc(s.currency)}" style="max-width:120px;"></div>
+        <button class="btn gold" onclick="saveSettingsForm()">💾 حفظ الإعدادات</button>
+      </div>
+
+      <div class="card pad">
+        <h2>النسخ الاحتياطي</h2>
+        <p class="subtitle">احفظ نسخة من جميع بياناتك (العملاء، الموردين، الحركات) بين فترة وأخرى في ملف على جهازك، واستعدها لاحقاً أو على جهاز آخر.</p>
+        <button class="btn" onclick="exportBackup()" style="margin-bottom:12px;width:100%;">⬇ تنزيل نسخة احتياطية</button>
+        <label class="btn outline" style="display:block;text-align:center;width:100%;">
+          ⬆ استيراد نسخة احتياطية
+          <input type="file" accept="application/json" style="display:none;" onchange="importBackup(event)">
+        </label>
+        <p class="hint" style="margin-top:10px;">تنبيه: الاستيراد سيستبدل كل البيانات الحالية بعد تأكيدك.</p>
+        <hr style="margin:18px 0;border:none;border-top:1px solid var(--line);">
+        <button class="btn danger" onclick="wipeAllData()">🗑 حذف جميع البيانات من هذا الجهاز</button>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettingsForm(){
+  const s = Store.getSettings();
+  s.companyName = document.getElementById('s_name').value.trim() || DEFAULT_SETTINGS.companyName;
+  s.logoUrl = document.getElementById('s_logo').value.trim();
+  s.phone = document.getElementById('s_phone').value.trim();
+  s.address = document.getElementById('s_address').value.trim();
+  s.currency = document.getElementById('s_currency').value.trim() || 'ر.س';
+  Store.saveSettings(s);
+  applyBranding();
+  alert('تم حفظ الإعدادات بنجاح');
+}
+
+function exportBackup(){
+  const data = {
+    exportedAt: new Date().toISOString(),
+    parties: Store.getParties(),
+    transactions: Store.getTxs(),
+    settings: Store.getSettings()
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `نسخة-احتياطية-اسس-التوريد-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data.parties || !data.transactions){ alert('ملف غير صالح'); return; }
+      if(!confirm('سيتم استبدال جميع البيانات الحالية بمحتوى هذا الملف. هل تريد المتابعة؟')) return;
+      Store.saveParties(data.parties);
+      Store.saveTxs(data.transactions);
+      if(data.settings) Store.saveSettings({...DEFAULT_SETTINGS, ...data.settings});
+      alert('تمت الاستعادة بنجاح');
+      applyBranding();
+      location.hash = '#/home';
+      route();
+    }catch(e){ alert('تعذّرت قراءة الملف: ' + e.message); }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function wipeAllData(){
+  if(confirm('سيتم حذف كل العملاء والموردين والحركات نهائياً من هذا الجهاز. متابعة؟')){
+    localStorage.removeItem(LS_KEYS.parties);
+    localStorage.removeItem(LS_KEYS.txs);
+    location.hash = '#/home';
+    route();
+  }
+}
+
+/* ================================================================
+   11) النافذة المنبثقة (Modal) — دوال مساعدة
+   ================================================================ */
+function openModal(){ document.getElementById('overlay').classList.add('open'); }
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+
+/* ================================================================
+   12) الطباعة: فاتورة فردية / كشف حساب
+   ================================================================ */
+function invHeadHTML(settings){
+  return `
+    <div class="inv-head">
+      <div class="row" style="gap:12px;">
+        ${settings.logoUrl?`<img src="${esc(settings.logoUrl)}">`:''}
+        <div class="inv-co">${esc(settings.companyName)}
+          <small>${settings.phone?('هاتف: '+esc(settings.phone)+' — '):''}${esc(settings.address||'')}</small>
+        </div>
+      </div>
+      <div class="seal">${esc(settings.companyName)}<br>ختم معتمد</div>
+    </div>`;
+}
+
+function printInvoice(txId){
+  const t = Store.getTxs().find(x=>x.id===txId);
+  if(!t) return;
+  const p = Store.getParty(t.partyId);
+  const settings = Store.getSettings();
+
+  let itemsHtml = '';
+  if(t.items && t.items.length){
+    itemsHtml = `<table class="inv-table">
+      <thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
+      <tbody>${t.items.map((it,i)=>`<tr><td>${i+1}</td><td>${esc(it.name)}</td><td class="num">${it.qty}</td><td class="num">${money(it.price)}</td><td class="num">${money(it.qty*it.price)}</td></tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  const stats = calcPartyStats(p.id);
+
+  document.getElementById('printArea').innerHTML = `
+    ${invHeadHTML(settings)}
+    <div class="row between" style="margin:14px 0;">
+      <div><b>فاتورة رقم:</b> INV-${String(t.invoiceNo||'').padStart(4,'0')}</div>
+      <div><b>التاريخ:</b> ${fmtDate(t.date)} — <b>الوقت:</b> ${t.time||''}</div>
+    </div>
+    <div class="card pad" style="margin-bottom:10px;">
+      <b>${partyLabel(p.type)}:</b> ${esc(p.name)} ${p.phone?(' — هاتف: '+esc(p.phone)):''}
+    </div>
+    ${t.note?`<p><b>البيان:</b> ${esc(t.note)}</p>`:''}
+    ${itemsHtml}
+    <div class="inv-total"><table>
+      <tr><td>إجمالي هذه الفاتورة</td><td class="num">${money(t.amount)} ${settings.currency}</td></tr>
+      <tr><td>الرصيد الحالي للحساب</td><td class="num">${money(Math.abs(stats.balance))} ${settings.currency}</td></tr>
+    </table></div>
+    <div class="inv-foot">تم إنشاء هذه الفاتورة عبر دفتر الحسابات الخاص بـ ${esc(settings.companyName)}</div>
+  `;
+  window.print();
+}
+
+function printStatement(partyId){
+  const settings = Store.getSettings();
+  let txs, party=null, title, filterNote='';
+
+  if(partyId){
+    party = Store.getParty(partyId);
+    txs = Store.getTxs().filter(t=>t.partyId===partyId);
+    if(currentPartyFilter.from) txs = txs.filter(t=>t.date>=currentPartyFilter.from);
+    if(currentPartyFilter.to) txs = txs.filter(t=>t.date<=currentPartyFilter.to);
+    title = `كشف حساب: ${party.name} (${partyLabel(party.type)})`;
+    if(currentPartyFilter.from||currentPartyFilter.to) filterNote = `من ${currentPartyFilter.from?fmtDate(currentPartyFilter.from):'البداية'} إلى ${currentPartyFilter.to?fmtDate(currentPartyFilter.to):'اليوم'}`;
+  }else{
+    // كشف عام لكل الحركات المعروضة حالياً بحسب فلاتر صفحة السجل
+    const parties = Store.getParties();
+    txs = Store.getTxs();
+    if(txFilter.partyType!=='all'){ const ids=parties.filter(p=>p.type===txFilter.partyType).map(p=>p.id); txs=txs.filter(t=>ids.includes(t.partyId)); }
+    if(txFilter.partyId!=='all') txs = txs.filter(t=>t.partyId===txFilter.partyId);
+    if(txFilter.from) txs = txs.filter(t=>t.date>=txFilter.from);
+    if(txFilter.to) txs = txs.filter(t=>t.date<=txFilter.to);
+    title = 'كشف حساب عام — جميع الأطراف';
+    if(txFilter.from||txFilter.to) filterNote = `من ${txFilter.from?fmtDate(txFilter.from):'البداية'} إلى ${txFilter.to?fmtDate(txFilter.to):'اليوم'}`;
+  }
+
+  txs = [...txs].sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+  let running=0;
+  const parties = Store.getParties();
+
+  const rows = txs.map(t=>{
+    running += (t.type==='invoice'?Number(t.amount):-Number(t.amount));
+    const p = parties.find(x=>x.id===t.partyId);
+    return `<tr>
+      <td>${fmtDate(t.date)}</td>
+      <td>${t.time||''}</td>
+      ${partyId?'':`<td>${p?esc(p.name):'—'}</td>`}
+      <td>${t.type==='invoice'?'فاتورة':'دفعة'}</td>
+      <td>${esc(t.note||'—')}</td>
+      <td class="num">${money(t.amount)}</td>
+      <td class="num">${money(running)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalInv = txs.filter(t=>t.type==='invoice').reduce((s,t)=>s+Number(t.amount),0);
+  const totalPaid = txs.filter(t=>t.type==='payment').reduce((s,t)=>s+Number(t.amount),0);
+
+  document.getElementById('printArea').innerHTML = `
+    ${invHeadHTML(settings)}
+    <h2 style="margin:14px 0 4px;">${esc(title)}</h2>
+    <p style="color:#666;font-size:12.5px;margin:0 0 14px;">${filterNote} — تاريخ الطباعة: ${fmtDate(todayStr())}</p>
+    <table class="inv-table">
+      <thead><tr><th>التاريخ</th><th>الوقت</th>${partyId?'':'<th>الطرف</th>'}<th>النوع</th><th>البيان</th><th>المبلغ</th><th>الرصيد التراكمي</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="7" style="text-align:center;color:#999;">لا توجد حركات</td></tr>`}</tbody>
+    </table>
+    <div class="inv-total"><table>
+      <tr><td>إجمالي الفواتير</td><td class="num">${money(totalInv)} ${settings.currency}</td></tr>
+      <tr><td>إجمالي المسدد</td><td class="num">${money(totalPaid)} ${settings.currency}</td></tr>
+      <tr><td>الرصيد النهائي</td><td class="num">${money(running)} ${settings.currency}</td></tr>
+    </table></div>
+    <div class="inv-foot">تم إنشاء هذا الكشف عبر دفتر الحسابات الخاص بـ ${esc(settings.companyName)}</div>
+  `;
+  window.print();
+}
+</script>
+</body>
+</html>
